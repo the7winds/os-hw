@@ -25,7 +25,7 @@ static inline void initUART()
     out8(UARTIntrEnR, 0);                   // don't gen interruptions
 
     // test output
-    UARTputstr("UART test");
+    UARTputstr("UART test\n");
 }
 
 #endif /* __UART_H__ */

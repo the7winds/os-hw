@@ -2,9 +2,11 @@
 #define UARTDataR    UARTbegin + 0
 #define UARTLnStsR   UARTbegin + 5
 
-#define MasterCmdStsR  0x20
 
 .global pic_handler_start
+
+helloStr:
+    .asciz "Hello!\n"
 
 .text
 
@@ -13,18 +15,21 @@ pic_handler_start:
     push %rax
     push %rbx
     push %rdx
+    push %rcx
+    push %rsp
+    push %rbp
+    push %rsi
+    push %rdi
 
-    movb '!', %al
-    push %ax
-    call UARTputchar
-    pop %ax
-
-    // send EOI to master on IRQ0 - 0b00010000
-    movw MasterCmdStsR, %dx
-    movb 0x10, %al
-    outb %al, %dx  
+    call HelloPrint
+    call sendEOI
 
     // restore registers
+    pop %rdi
+    pop %rsi
+    pop %rbp
+    pop %rsp
+    pop %rcx
     pop %rdx
     pop %rbx
     pop %rax

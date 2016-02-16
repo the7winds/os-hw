@@ -21,3 +21,8 @@ void UARTputstr(char* str)
 		UARTputchar(str[i]);
 	}
 }
+
+void HelloPrint()
+{
+    UARTputstr("Hello!\n");
+}

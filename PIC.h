@@ -9,6 +9,8 @@
 #define SlaveCmdStsR      0xA0          // port to access to Command & Status Register Slave
 #define SlaveIntrMskDataR 0xA1          // port to access to Interrupt Mask Register & Data Register Slave
 
+#define EOI               0x20
+
 static inline void initPIC()
 {
     out8(MasterCmdStsR,      0x11);         // tells that command consists of 4 words
@@ -20,6 +22,10 @@ static inline void initPIC()
     out8(SlaveIntrMskDataR, 0x28);          // discribes mapping: IRQ + 0x28
     out8(SlaveIntrMskDataR, 2);             // slave is connected to 2
     out8(SlaveIntrMskDataR, 1);
+}
+
+void sendEOI() {
+	out8(MasterCmdStsR, EOI);
 }
 
 #endif /* __PIC_H__ */
