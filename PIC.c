@@ -2,7 +2,8 @@
 #include "PIC.h"
 #include "UART.h"
 
-void sendEOI() {
+void sendEOI()
+{
     out8(MasterCmdStsR, EOI);
 }
 
