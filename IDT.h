@@ -14,11 +14,10 @@ struct idt_dscrpt
 
 #define IDT_SIZE 33
 
-struct idt_dscrpt idt[IDT_SIZE];
-
 static inline void initIDT()
 {
     struct idt_ptr my_idt_ptr;
+    extern struct idt_dscrpt idt[IDT_SIZE];
 
     my_idt_ptr.base = (uint64_t) idt;
     my_idt_ptr.size = IDT_SIZE * sizeof(struct idt_dscrpt) - 1;
