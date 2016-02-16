@@ -24,8 +24,4 @@ static inline void initPIC()
     out8(SlaveIntrMskDataR, 1);
 }
 
-void sendEOI() {
-	out8(MasterCmdStsR, EOI);
-}
-
 #endif /* __PIC_H__ */

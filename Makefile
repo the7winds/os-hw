@@ -10,7 +10,7 @@ ASM := picHandler.S bootstrap.S videomem.S
 AOBJ:= $(ASM:.S=.o)
 ADEP:= $(ASM:.S=.d)
 
-SRC := UART.c main.c
+SRC := PIC.c UART.c main.c
 OBJ := $(AOBJ) $(SRC:.c=.o)
 DEP := $(ADEP) $(SRC:.c=.d)
 
