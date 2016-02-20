@@ -6,8 +6,3 @@ void sendEOI()
 {
     out8(MasterCmdStsR, EOI);
 }
-
-void HelloPrint()
-{
-    UARTputstr("Hello!\n");
-}

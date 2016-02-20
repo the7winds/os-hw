@@ -22,7 +22,8 @@ pic_handler_start:
     push %rdi
     pushfq
 
-    call HelloPrint
+    movq $helloStr, %rdi
+    call UARTputstr
     call sendEOI
 
     // restore registers
