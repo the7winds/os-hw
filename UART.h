@@ -18,7 +18,7 @@ static inline void initUART()
     // setting speed: 600 BPS
     out8(UARTLnCntrlR, 0x8B);               // divisor latch
     out8(UARTDataR,    0x00);               // lower part of divisor
-    out8(UARTIntrEnR, 0xC0);               // higher part of divisor
+    out8(UARTIntrEnR,  0xC0);               // higher part of divisor
 
     // setting 8bit frame, check oddness + no interrupts
     out8(UARTLnCntrlR, 0x0B);                 

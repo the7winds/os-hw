@@ -20,11 +20,13 @@ pic_handler_start:
     push %rbp
     push %rsi
     push %rdi
+    pushfq
 
     call HelloPrint
     call sendEOI
 
     // restore registers
+    popfq
     pop %rdi
     pop %rsi
     pop %rbp
