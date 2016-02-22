@@ -9,6 +9,8 @@
 #include "PIT.h"
 #include "IDT.h"
 
+#include "utils.h"
+
 struct idt_dscrpt idt[IDT_SIZE];
 
 void main(void)
@@ -30,7 +32,6 @@ void main(void)
     idt[0x20].type = (1 << 7) | 14;
     idt[0x20].seg_selector = KERNEL_CODE;
     idt[0x20].reserved = 0x0;
-
 
     // set up interrups flag
     __asm__ volatile("sti");
