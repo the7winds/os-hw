@@ -5,8 +5,8 @@
 
 .global pic_handler_start
 
-helloStr:
-    .asciz "Hello!\n"
+format:
+    .asciz "Interrupt has been occurred: %d\n"
 
 .text
 
@@ -22,8 +22,9 @@ pic_handler_start:
     push %rdi
     pushfq
 
-    movq $helloStr, %rdi
-    call UARTputstr
+    movq $format, %rdi
+    movq $33, %rsi
+    call printf
     call sendEOI
 
     // restore registers
