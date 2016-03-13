@@ -3,6 +3,24 @@
 #include "utils.h"
 #include "UART.h"
 
+char VarForInvalidAdress;
+
+void putc(char c) {
+    while (1) {
+        char status = in8(UARTLnStsR);
+        if (status & (1 << 5)) {
+            out8(UARTDataR, c);
+            break;
+        }
+    }
+}
+
+void puts(char* str) {
+    for (int i = 0; str[i] != 0; ++i) {
+        putc(str[i]);
+    }
+}
+
 int memcmp(void* ptr1, void* ptr2, size_t num) {
     char* p1 = (char*) ptr1;
     char* p2 = (char*) ptr2;
@@ -27,7 +45,7 @@ int printf(char* format, ...) {
 }
 
 int vprintf(char* format, va_list args) {
-    return printfHelper(format, args, UARTprinter, NULL);
+    return printfHelper(format, args, printer, NULL);
 }
 
 int printStep2(void* arg, size_t argSize, char type, void (*printer)(char c, void* wrapper), void* wrapper) {
@@ -264,9 +282,9 @@ int printfHelper(char *format, va_list args, void (*printer)(char c, void* wrapp
 }
 
 
-void UARTprinter(char c, void* wrapper) {
+void printer(char c, void* wrapper) {
     if (wrapper == NULL) {}
-    UARTputchar(c);
+    putc(c);
 }
 
 void bufferPrinter(char c, void* wrapper) {

@@ -10,6 +10,10 @@
 #include "IDT.h"
 
 #include "utils.h"
+#include "mem_info.h"
+#include "buddy_alloc.h"
+#include "fixed_alloc.h"
+#include "paging.h"
 
 struct idt_dscrpt idt[IDT_SIZE];
 
@@ -34,7 +38,18 @@ void main(void)
     idt[0x20].reserved = 0x0;
 
     // set up interrups flag
-    __asm__ volatile("sti");
+    // __asm__ volatile("sti");
 
+    initMemMapInfo();
+    printMemMap();
+    reserveKernelMemory();
+    printMemMap();
+    
+    initBuddyAllocator();
+    setUpPaging();
+    initFixedAllocator();
+
+    printf("----END----\n");
+    
     while (1);
 }
