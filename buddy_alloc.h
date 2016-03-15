@@ -27,7 +27,7 @@ extern PageDscrptr* pages;
 void* buddyAlloc(uint8_t order);
 
 static inline void* buddyVAlloc(uint8_t order) {
-	return (void*) VA((uint64_t) buddyAlloc(order));
+    return (void*) VA((uint64_t) buddyAlloc(order));
 }
 
 void buddyFree(void* ptr, uint8_t order);
@@ -40,11 +40,7 @@ void printOrders();
 
 void initBuddyAllocator();
 
-void setSkipedPages(uint64_t skiped);
-
 uint64_t getPageNumByPtr(void* ptr);
-
-void* getPointerByPageNum(uint64_t n);
 
 void coverMemory();
 
@@ -52,6 +48,5 @@ void coverBlock(uint64_t begin, uint64_t end, uint32_t curBlockIdx);
 
 int isLess(uint64_t idx, uint64_t order, uint64_t end);
 
-uint8_t getMaxExistedOrder();
 
 #endif

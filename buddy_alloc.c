@@ -9,8 +9,6 @@ static PageDscrptr** orders;    // lists
 static uint32_t pagesAmount;
 PageDscrptr* pages;      // all pages
 
-static uint8_t maxExistedOrder;
-
 
 void addAtBegin(PageDscrptr* node) {
     node->next = orders[node->order];
@@ -157,15 +155,10 @@ void coverBlock(uint64_t begin, uint64_t end, uint32_t curBlockIdx) {
         addAtBegin(pages + idx);
 
         idx += (1 << order);
-        maxExistedOrder = (order > maxExistedOrder ? order : maxExistedOrder);
     }
 }
 
 
 int isLess(uint64_t idx, uint64_t order, uint64_t end) {
     return ((idx + (1 << order) - 1) * PAGE_SIZE < end);
-}
-
-uint8_t getMaxExistedOrder() {
-    return maxExistedOrder;
 }
