@@ -38,7 +38,7 @@ static inline void buddyVFree(void* ptr, uint8_t order) {
 
 void printOrders();
 
-void initBuddyAllocator();
+int initBuddyAllocator();
 
 uint64_t getPageNumByPtr(void* ptr);
 

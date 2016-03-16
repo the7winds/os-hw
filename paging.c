@@ -15,7 +15,7 @@ void clearPage(void* page) {
 void ifFeildEmptyCreate(pte_t* field) {
     if (pte_present(*field) == 0) {
         pte_t page = (pte_t) buddyAlloc(0);
-        clearPage((void*)page);
+        clearPage((void*) page);
         (*field) = page | PTE_PRESENT | PTE_WRITE;
     }
 }
@@ -23,14 +23,14 @@ void ifFeildEmptyCreate(pte_t* field) {
 
 void addToTable(pte_t* pml4, uint64_t virt, uint64_t phys) {
     pte_t* pml4e = (pte_t*) ((uint64_t) pml4 + pml4_i(virt));
-    
+   
     ifFeildEmptyCreate(pml4e);
     
-    pte_t* pdpte = (pte_t*) (get_addr(*pml4e) + pml3_i(virt));
-    
+    pte_t* pdpte = (pte_t*) ((pte_phys(*pml4e) << 12) + pml3_i(virt));
+
     ifFeildEmptyCreate(pdpte);
-   
-    pte_t* pde = (pte_t*) (get_addr(*pdpte) + pml2_i(virt));
+
+    pte_t* pde = (pte_t*) ((pte_phys(*pdpte) << 12) + pml2_i(virt));
    
     (*pde) = phys | PTE_PRESENT | PTE_WRITE | PTE_LARGE;
 }
@@ -38,17 +38,18 @@ void addToTable(pte_t* pml4, uint64_t virt, uint64_t phys) {
 
 void setUpPaging() {
     pte_t* pml4 = (pte_t*) buddyAlloc(0);
+
     clearPage(pml4);
+
     printf("pml4: %llx\n", pml4);
 
     uint64_t phys = 0;
-    printf("MAX ADDR: %llx\n", MAX_PHYS_ADDR);
-    for (; phys < 0x100000000; phys += 512 * PAGE_SIZE) {
+    for (; phys + PAGE2M_SIZE <= FIRST2G; phys += PAGE2M_SIZE) {
         addToTable(pml4, KERNEL_VIRT(phys), phys);
         addToTable(pml4, VA(phys), phys);
     }
     
-    for (; phys + PAGE_SIZE * 512 < MAX_PHYS_ADDR; phys += PAGE_SIZE * 512) {
+    for (; phys + PAGE2M_SIZE <= MAX_PHYS_ADDR; phys += PAGE2M_SIZE) {
         addToTable(pml4, VA(phys), phys);
     }
 
