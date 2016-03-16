@@ -70,8 +70,13 @@ static inline void flush_tlb_addr(virt_t addr)
 static inline void flush_tlb(void)
 { store_pml4(load_pml4()); }
 
+
+
+#define FIRST2G ((uint64_t) 1 << 31)
+#define PAGE2M_SIZE ((uint64_t)  1 << 21)
+
 static inline uint64_t get_addr(pte_t dscrpt)
-{ return dscrpt & 0xFFFFFFFFFFFFF000; }
+{ return (dscrpt / PAGE_SIZE) * PAGE_SIZE; }
 
 void setUpPaging();
 

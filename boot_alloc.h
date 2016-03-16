@@ -3,8 +3,10 @@
 
 #include "mem_info.h"
 
-void initBootAllocator();
+#define FIRST4G ((uint64_t) 1 << 32)
 
 void* boot_alloc(uint64_t length);
+
+void* search_free_memory(uint64_t length);
 
 #endif

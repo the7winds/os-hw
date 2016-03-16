@@ -4,36 +4,42 @@
 #include <stdint.h>
 #include "utils.h"
 
-#define MEMMAP_END(ptr) ((ptr)->size < 20 || (ptr) < BEGIN || (ptr) >= BEGIN + LENGTH)
-
-void initMemMapInfo();
-
-struct MemMapStruct* nextMemMapStruct(struct MemMapStruct *dscrpt);
-
-struct MemMapStruct {
-    uint32_t size; 
+struct MMAPStruct {
     uint64_t base_addr;
     uint64_t length;
     uint8_t type;
 } __attribute__((packed));
 
-typedef struct MemMapStruct MemMapStruct;
+typedef struct MMAPStruct MMAPStruct;
 
-extern uint32_t LENGTH;
-extern MemMapStruct* BEGIN;
-extern MemMapStruct* END;
+#define MAX_LENGTH 100
+#define SIZE_OF_SIZE 4
+#define MMAP_FLAG (1 << 6)
+
+extern uint8_t LENGTH;
+extern MMAPStruct MMAP[MAX_LENGTH];
+extern uint64_t MAX_PHYS_ADDR;
+
+int initMMAPInfo();
+
+static inline int MMAP_end(void* ptr) {
+	return (*(uint32_t*) ptr) < 20;
+}
+
+static inline void* getNextPtr(void *ptr) {
+    uint64_t shift = *((uint32_t*) ptr) + SIZE_OF_SIZE;
+    return (void*) ((uint64_t) ptr + shift);
+}
 
 
-void printMemMap();
+static inline MMAPStruct* getNodeByPtr(void* nodePtr) {
+    return (MMAPStruct*) ((uint64_t) nodePtr + SIZE_OF_SIZE);
+}
 
-void reserveMemory(void* begin, uint64_t length);
+void printMMAP();
 
-void reserveKernelMemory();
+int reserveKernelMemory();
 
-void* search_free_memory(uint64_t length);
-
-uint32_t getFreeSize();
-
-uint64_t countPhysMemory();
+int reserveMemory(void* begin, uint64_t length);
 
 #endif /* __MEM_INFO__ */

@@ -7,16 +7,10 @@
 static PageDscrptr** orders;    // lists
 
 static uint32_t pagesAmount;
-PageDscrptr* pages;      // all pages
+PageDscrptr* pages;             // all pages
 
-
-void addAtBegin(PageDscrptr* node) {
-    node->next = orders[node->order];
-    orders[node->order] = node;
-}
 
 void* buddyAlloc(uint8_t order) {
-    // printf("T1\n");
     if (orders[order]) {
         uint64_t n = orders[order]->begin;
         orders[order]->isFree = 0;
@@ -24,32 +18,28 @@ void* buddyAlloc(uint8_t order) {
         return (void*) (n * PAGE_SIZE);
     }
 
-    // printf("T2\n");
-    // printOrders();
     PageDscrptr* node;
     for (uint8_t i = order + 1; i < MAX_ORDER; ++i) {
-        if (orders[i]) {
+        if (orders[i]) {    // remove head
             node = orders[i];
             orders[i] = orders[i]->next;
             break;
         }
     }
-    // printf("B::%llx\n", node->begin);
-    // printf("T3\n");
+    
     while (node->order > order) {
-        // printf("T!\n");
         node->order--;
-        PageDscrptr* node1 = pages + (node->begin + (1 << node->order));
-        node1->begin = node->begin + (1 << node->order); 
-        node1->order = node->order;
-        node1->isFree = 1;
-        node1->attr = node->attr;
-        addAtBegin(node1);
+        uint32_t neighbour = (node->begin ^ (1 << node->order));
+        pages[neighbour].begin = neighbour;
+        pages[neighbour].order = node->order;
+        pages[neighbour].isFree = 1;
+        pages[neighbour].attr = node->attr;
+        pages[neighbour].next = orders[pages[neighbour].order]; // adding to list
+        orders[pages[neighbour].order] = pages + neighbour;
     }
-    // printOrders();
 
     node->isFree = 0;
-    return (void*) ((uint64_t) (1 << node->order) * PAGE_SIZE);
+    return (void*) ((uint64_t) (node->begin) * (1 << node->order) * PAGE_SIZE);
 }
 
 void printOrders() {
@@ -57,7 +47,7 @@ void printOrders() {
         printf("%d:", i);
         PageDscrptr* ptr = orders[i];
         while (ptr) {
-            printf("%llx -> ", ptr->begin);
+            printf("%llx -> ", (uint64_t) ptr->begin * PAGE_SIZE);
             ptr = ptr->next;
         }
         printf("NULL\n");
@@ -91,74 +81,69 @@ void buddyFree(void* ptr, uint8_t order) {
     }
  
     node->isFree = 1;
-    addAtBegin(node);
+
+    node->next = orders[node->order];
+    orders[node->order] = node;
 }
 
 
-void initBuddyAllocator() {
-    initBootAllocator();
-
-    uint64_t physMemory = countPhysMemory();
-    pagesAmount = physMemory / (PAGE_SIZE + sizeof(PageDscrptr));
+int initBuddyAllocator() {
+    pagesAmount = MAX_PHYS_ADDR / (PAGE_SIZE + sizeof(PageDscrptr));
    
-    printf("PhysMemory: 0x%llx\n", physMemory); 
+    printf("Max phys addr: 0x%llx\n", MAX_PHYS_ADDR); 
     printf("Page size: 0x%llx\n", PAGE_SIZE);
     printf("Amount of pages: 0x%llx\n", pagesAmount);
-    printf("Memory for page descriptors: 0x%llx\n", sizeof(PageDscrptr) * pagesAmount);
+    printf("Memory for pages dscrptrs: 0x%llx\n", pagesAmount * sizeof(PageDscrptr));
 
-    while (pages == NULL) {
-        pages = (PageDscrptr*) boot_alloc(pagesAmount * sizeof(PageDscrptr));
-        pagesAmount--;
+    pages = (PageDscrptr*) boot_alloc(pagesAmount * sizeof(PageDscrptr));
+    if (pages == NULL) {
+        return 1;
     }
-    printMemMap();
 
-    printf("Amount of pages: 0x%llx\n", pagesAmount);
+    printf("resered memory for pages dscrptrs\n");
+
     orders = (PageDscrptr**) boot_alloc(MAX_ORDER * sizeof(PageDscrptr*));
-    printf("Memory for lists: 0x%llx\n", MAX_ORDER * sizeof(PageDscrptr*));
+    if (orders == NULL) {
+        return 2;
+    }
+
+    printf("resered memory for lists\n");
+
+    printf("initing lists...\n");
 
     coverMemory();
+
+    return 0;
 }
 
 
 void coverMemory() {
-    uint32_t curBlockIdx = 0;
-    MemMapStruct* dscrpt = BEGIN;
-    do {
-        if (dscrpt->type == 1) {
-            ++curBlockIdx;
-            uint64_t begin = dscrpt->base_addr;
-            uint64_t end = begin + dscrpt->length;
+    for (int i = 0; i < LENGTH; ++i) {
+        if (MMAP[i].type == 1) {
+            uint64_t begin = MMAP[i].base_addr;
+            uint64_t end = begin + MMAP[i].length;  // byte after last
             begin = (begin / PAGE_SIZE + begin % PAGE_SIZE) * PAGE_SIZE;
-            coverBlock(begin, end, curBlockIdx);
+            coverBlock(begin, end, i);
         }
-        dscrpt = nextMemMapStruct(dscrpt);
-    } while(!MEMMAP_END(dscrpt));
-
-    printf("Covered\n");
+    }
 }
 
 
-void coverBlock(uint64_t begin, uint64_t end, uint32_t curBlockIdx) {
-    uint64_t idx = begin / PAGE_SIZE;
-    while (isLess(idx, 0, end)) {
-        uint64_t order = 0;
-        uint64_t neighbour;
-        while (isLess(idx, order + 1, end) && idx < (neighbour = idx ^ (1 << (order + 1)))) {
+void coverBlock(uint64_t begin, uint64_t end, uint32_t blockIdx) {
+    for (uint64_t order = 0, idx = begin / PAGE_SIZE; isLess(idx, 0, end); idx += (1 << order)) {
+        while (isLess(idx, order + 1, end) && idx < (idx ^ (1 << order))) {
             ++order;
         }
-        
         pages[idx].order = order;
         pages[idx].isFree = 1;
         pages[idx].begin = idx;
-        pages[idx].attr = curBlockIdx;
+        pages[idx].attr = blockIdx;
         pages[idx].next = orders[order];
-        addAtBegin(pages + idx);
-
-        idx += (1 << order);
+        orders[order] = pages + idx;
     }
 }
 
 
 int isLess(uint64_t idx, uint64_t order, uint64_t end) {
-    return ((idx + (1 << order) - 1) * PAGE_SIZE < end);
+    return ((idx + (1 << order)) * PAGE_SIZE <= end);
 }
