@@ -39,7 +39,7 @@ Slab* newSmallSlab(uint16_t size, uint16_t align) {
     uint64_t dataBegin = ((uint64_t) page / align + (uint64_t) page % align) * align;
 
     // build list structure
-    for (uint64_t ptr = dataBegin; ptr + shift < (uint64_t) slab; ptr += shift) {
+    for (uint64_t ptr = dataBegin; ptr + shift <= (uint64_t) slab; ptr += shift) {
         slab->limit++;
         SlabNode* node = (SlabNode*) (ptr + size);
         node->data = (void*) ptr;
