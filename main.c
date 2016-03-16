@@ -40,27 +40,22 @@ void main(void)
     // set up interrups flag
     // __asm__ volatile("sti");
 
-    //
-
     if (initMMAPInfo() == 0) {
         printf("intited initMMAPInfo\n");
         printMMAP();
         if (reserveKernelMemory() == 0) {
             printf("kernel memory is reserved\n");
-            // printMMAP();
+            printMMAP();
             if (initBuddyAllocator() == 0) {
                 printf("buddy allocator inited\n");
-                // printMMAP();
-                // printOrders();
-                /*while (1) {
-                    uint64_t a = (uint64_t) buddyAlloc(0);
-                    printf("addr: %llx - %s\n", a, (a >= ((uint64_t) 1 << 32) ? "BAD" : "OK"));
-                    for (int i = 0; i < 10000000; ++i);
-                }*/
-                // printMMAP();
-                // printOrders();
                 setUpPaging();
-                // initFixedAllocator();
+                printOrders();
+                printMMAP();
+                if (initFixedAllocator() == 0) {
+                    printf("DONE!\n");
+                } else {
+                    printf("can't initFixedAllocator\n");
+                }
             } else {
                 printf("can't initBuddyAllocator\n");
             }

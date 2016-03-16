@@ -16,7 +16,7 @@ struct FixedAllocator {
 
 typedef struct FixedAllocator FixedAllocator;
 
-void initFixedAllocator();
+int initFixedAllocator();
 
 FixedAllocator* newFixedAllocator(uint16_t size, uint16_t align);
 

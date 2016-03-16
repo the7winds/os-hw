@@ -95,14 +95,14 @@ int initBuddyAllocator() {
     printf("Amount of pages: 0x%llx\n", pagesAmount);
     printf("Memory for pages dscrptrs: 0x%llx\n", pagesAmount * sizeof(PageDscrptr));
 
-    pages = (PageDscrptr*) boot_alloc(pagesAmount * sizeof(PageDscrptr));
+    pages = (PageDscrptr*) VA((uint64_t) boot_alloc(pagesAmount * sizeof(PageDscrptr)));
     if (pages == NULL) {
         return 1;
     }
 
     printf("resered memory for pages dscrptrs\n");
 
-    orders = (PageDscrptr**) boot_alloc(MAX_ORDER * sizeof(PageDscrptr*));
+    orders = (PageDscrptr**) VA((uint64_t) boot_alloc(MAX_ORDER * sizeof(PageDscrptr*)));
     if (orders == NULL) {
         return 2;
     }

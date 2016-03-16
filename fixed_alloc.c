@@ -4,13 +4,15 @@ extern FixedAllocator forAllocators;
 extern FixedAllocator* forBigSlabStruct;
 extern FixedAllocator* forBigSlabNode;
 
-void initFixedAllocator() {
+int initFixedAllocator() {
     forAllocators.size = sizeof(FixedAllocator);
     forAllocators.align = 4;
     forAllocators.empty = forAllocators.partly = forAllocators.full = NULL;
 
     forBigSlabStruct = newFixedAllocator(sizeof(Slab), 4);
     forBigSlabNode = newFixedAllocator(sizeof(SlabNode), 4);
+
+    return (forBigSlabNode && forBigSlabStruct ? 0 : 1);
 }
 
 void* fixedAllocate(FixedAllocator* fixedAllocator) {

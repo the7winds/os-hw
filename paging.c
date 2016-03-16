@@ -22,15 +22,15 @@ void ifFeildEmptyCreate(pte_t* field) {
 
 
 void addToTable(pte_t* pml4, uint64_t virt, uint64_t phys) {
-    pte_t* pml4e = (pte_t*) ((uint64_t) pml4 + pml4_i(virt));
+    pte_t* pml4e = (pte_t*) (uint64_t) pml4 + pml4_i(virt);
    
     ifFeildEmptyCreate(pml4e);
     
-    pte_t* pdpte = (pte_t*) ((pte_phys(*pml4e) << 12) + pml3_i(virt));
+    pte_t* pdpte = (pte_t*) (pte_phys(*pml4e) << 12) + pml3_i(virt);
 
     ifFeildEmptyCreate(pdpte);
 
-    pte_t* pde = (pte_t*) ((pte_phys(*pdpte) << 12) + pml2_i(virt));
+    pte_t* pde = (pte_t*) (pte_phys(*pdpte) << 12) + pml2_i(virt);
 
     (*pde) = phys | PTE_PRESENT | PTE_WRITE | PTE_LARGE;
 }
@@ -47,7 +47,6 @@ void setUpPaging() {
     for (; phys + PAGE2M_SIZE <= FIRST2G; phys += PAGE2M_SIZE) {
         addToTable(pml4, KERNEL_VIRT(phys), phys);
         addToTable(pml4, VA(phys), phys);
-        addToTable(pml4, phys, phys);
     }
     
     for (; phys + PAGE2M_SIZE <= MAX_PHYS_ADDR; phys += PAGE2M_SIZE) {
