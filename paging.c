@@ -4,7 +4,7 @@
 
 extern uint64_t MAX_PHYS_ADDR;
 
-
+    
 void clearPage(void* page) {
     for (uint64_t* ptr = page; (uint64_t) ptr < (uint64_t) page + PAGE_SIZE; ++ptr) {
         *ptr = 0;
@@ -31,7 +31,7 @@ void addToTable(pte_t* pml4, uint64_t virt, uint64_t phys) {
     ifFeildEmptyCreate(pdpte);
 
     pte_t* pde = (pte_t*) ((pte_phys(*pdpte) << 12) + pml2_i(virt));
-   
+
     (*pde) = phys | PTE_PRESENT | PTE_WRITE | PTE_LARGE;
 }
 
@@ -47,6 +47,7 @@ void setUpPaging() {
     for (; phys + PAGE2M_SIZE <= FIRST2G; phys += PAGE2M_SIZE) {
         addToTable(pml4, KERNEL_VIRT(phys), phys);
         addToTable(pml4, VA(phys), phys);
+        addToTable(pml4, phys, phys);
     }
     
     for (; phys + PAGE2M_SIZE <= MAX_PHYS_ADDR; phys += PAGE2M_SIZE) {
@@ -54,7 +55,7 @@ void setUpPaging() {
     }
 
     printf("cr3 is setting up...\n");
-
+    
     store_pml4((phys_t)pml4);
 
     printf("Paging setted up\n");
