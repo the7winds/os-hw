@@ -17,6 +17,8 @@
 
 struct idt_dscrpt idt[IDT_SIZE];
 
+void test();
+
 void main(void)
 {
     initUART();
@@ -52,15 +54,16 @@ void main(void)
                 printOrders();
                 printMMAP();
                 if (initFixedAllocator() == 0) {
-                    printf("DONE!\n");
+                    printf("fixed allocator inited!\n");
+                    test();
                 } else {
-                    printf("can't initFixedAllocator\n");
+                    printf("can't init fixed allocator\n");
                 }
             } else {
-                printf("can't initBuddyAllocator\n");
+                printf("can't init buddy allocator\n");
             }
         } else {
-            printf("can't reserveKernelMemory\n");
+            printf("can't reserve memory for kernel\n");
         }
     } else {
         printf("can't initMMAPInfo\n");
@@ -68,4 +71,32 @@ void main(void)
     printf("----END----\n");
     
     while (1);
+}
+
+void test() {
+    printf("buddy allocator test\n");
+
+    char* ptr = buddyVAlloc(1);
+    *ptr = 1;
+    buddyVFree(ptr, 1);
+
+    printf("fixed allocator test (small object)\n");
+
+    FixedAllocator* fixedAllocator = newFixedAllocator(20, 4);
+
+    ptr = fixedAllocate(fixedAllocator);
+    *ptr = 1;
+    fixedFree(ptr);
+
+    deleteFixedAllocator(fixedAllocator);
+
+    printf("fixed allocator test (big object)\n");
+
+    fixedAllocator = newFixedAllocator(PAGE_SIZE / 4, 4);
+
+    ptr = fixedAllocate(fixedAllocator);
+    *ptr = 1;
+    fixedFree(ptr);
+
+    deleteFixedAllocator(fixedAllocator);
 }
