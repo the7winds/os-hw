@@ -34,7 +34,7 @@ Slab* newSmallSlab(uint16_t size, uint16_t align) {
     slab->ctrl = NULL;
     slab->prev = slab->next = NULL;
 
-    uint64_t blockSize = (size + sizeof(SlabNode*));
+    uint64_t blockSize = (size + sizeof(SlabNode));
     uint64_t shift = (blockSize / align + blockSize % align) * align;
     uint64_t dataBegin = ((uint64_t) page / align + (uint64_t) page % align) * align;
 
@@ -91,7 +91,7 @@ Slab* newBigSlab(uint16_t size, uint16_t align) {
     slab->ctrl = NULL;
     slab->prev = slab->next = NULL;
 
-    for (uint64_t ptr = dataBegin; ptr < (uint64_t) page + ORDER_SIZE(BIG_ORDER); ptr += shift) {
+    for (uint64_t ptr = dataBegin; ptr <= (uint64_t) page + ORDER_SIZE(BIG_ORDER); ptr += shift) {
         slab->limit++;
         SlabNode* node = (SlabNode*) fixedAllocate(forBigSlabNode);
         node->data = (void*) ptr;
