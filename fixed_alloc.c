@@ -76,3 +76,7 @@ void moveSlabToPartly(FixedAllocator* fixedAllocator, Slab* slab) {
     slab->next = fixedAllocator->partly;
     fixedAllocator->partly = slab;
 }
+
+void deleteFixedAllocator(FixedAllocator* fixedAllocator) {
+    fixedFree(fixedAllocator);
+}

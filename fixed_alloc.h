@@ -24,6 +24,8 @@ void* fixedAllocate(FixedAllocator* fixedAllocator);
 
 void fixedFree(void* ptr);
 
+void deleteFixedAllocator(FixedAllocator* fixedAllocator);
+
 void moveSlabToEmpty(FixedAllocator* fixedAllocator, Slab* slab);
 
 void moveSlabToPartly(FixedAllocator* fixedAllocator, Slab* slab);
