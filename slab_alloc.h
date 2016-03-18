@@ -70,20 +70,4 @@ static inline void deleteSlab(Slab* slab) {
     slab->size < BIG_OBJECT_SIZE ? smallSlabDelete(slab) : bigSlabDelete(slab);
 }
 
-static inline int isHeadSlab(Slab* slab) {
-    return (slab->prev == NULL);
-}
-
-static inline int isSlabEmpty(Slab* slab) {
-    return (slab->counter == slab->limit);
-}
-
-static inline int isSlabPartly(Slab* slab) {
-    return (0 < slab->counter && slab->counter < slab->limit);
-}
-
-static inline int isSlabFull(Slab* slab) {
-    return (slab->counter == 0);
-}
-
 #endif

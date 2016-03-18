@@ -30,5 +30,17 @@ void moveSlabToEmpty(FixedAllocator* fixedAllocator, Slab* slab);
 
 void moveSlabToPartly(FixedAllocator* fixedAllocator, Slab* slab);
 
+static inline int isSlabEmpty(Slab* slab) {
+    return (slab->counter == slab->limit);
+}
+
+static inline int isSlabPartly(Slab* slab) {
+    return (0 < slab->counter && slab->counter < slab->limit);
+}
+
+static inline int isSlabFull(Slab* slab) {
+    return (slab->counter == 0);
+}
+
 
 #endif /* __FIXED_ALLOC_H__ */
