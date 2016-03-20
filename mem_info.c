@@ -59,13 +59,13 @@ int reserveMemory(void* begin, uint64_t length) {
     }
 
     if (idx < LENGTH) {
+        uint64_t l = 0;
         if ((uint64_t) begin > MMAP[idx].base_addr) {
             MMAP[LENGTH].base_addr = MMAP[idx].base_addr;
-            MMAP[LENGTH].length = (uint64_t) begin - MMAP[idx].base_addr;
+            MMAP[LENGTH].length = l = (uint64_t) begin - MMAP[idx].base_addr;
             MMAP[LENGTH++].type = 1;
         }
-
-        uint64_t l = ((uint64_t) begin > MMAP[idx].base_addr ? (uint64_t) begin > MMAP[idx].base_addr : 0);
+        
         if (MMAP[idx].length > l + length) {
             MMAP[LENGTH].base_addr = (uint64_t) begin + length;
             MMAP[LENGTH].length = MMAP[idx].length - l - length;
