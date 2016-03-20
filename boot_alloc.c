@@ -1,4 +1,5 @@
 #include "mem_info.h"
+#include "memory.h"
 #include "boot_alloc.h"
 
 static uint8_t allocs;
@@ -9,7 +10,7 @@ void* boot_alloc(uint64_t length) {
         allocs++;
         void* ptr = search_free_memory(length);
         if (reserveMemory(ptr, length) == 0) {
-            return ptr;   
+            return va((uint64_t)ptr);
         }
     }
     
