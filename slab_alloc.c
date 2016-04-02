@@ -20,6 +20,14 @@ PageDscrptr* getPageDscrptByVA(void* va) {
     return pages + PA(VA) / PAGE_SIZE;
 }
 
+Slab* newSlab(FixedAllocator* fixedAllocator) {
+    uint16_t size = fixedAllocator->size;
+    uint16_t align = fixedAllocator->align;
+    Slab* slab = (size < BIG_OBJECT_SIZE ? newSmallSlab(size, align) : newBigSlab(size, align));
+    slab->fixedAllocator = fixedAllocator;
+    return slab;
+}
+
 // small slab func
 
 Slab* newSmallSlab(uint16_t size, uint16_t align) {
@@ -30,6 +38,7 @@ Slab* newSmallSlab(uint16_t size, uint16_t align) {
 
     // init slab structure
     slab->counter = 0;
+    slab->limit = 0;
     slab->size = size;
     slab->ctrl = NULL;
     slab->prev = slab->next = NULL;

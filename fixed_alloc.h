@@ -42,5 +42,8 @@ static inline int isSlabFull(Slab* slab) {
     return (slab->counter == 0);
 }
 
+void cutSlab(Slab* slab);
+
+void changeHeadIfNeed(FixedAllocator *fixedAllocator, Slab *slab);
 
 #endif /* __FIXED_ALLOC_H__ */

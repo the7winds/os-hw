@@ -13,6 +13,8 @@ struct SlabNode {
     void* data;
 } __attribute__((packed));
 
+struct FixedAllocator;
+
 struct Slab {
     uint16_t counter;
     uint16_t limit;
@@ -20,6 +22,7 @@ struct Slab {
     SlabNode* ctrl;
     Slab* next;
     Slab* prev;
+    struct FixedAllocator* fixedAllocator;
 } __attribute__((packed));
 
 #include "buddy_alloc.h"
@@ -53,9 +56,7 @@ Slab* getSlabByPtr(void* ptr);
 
 // main funcs
 
-static inline Slab* newSlab(uint16_t size, uint16_t align) {
-    return (size < BIG_OBJECT_SIZE ? newSmallSlab(size, align) : newBigSlab(size, align));
-}
+Slab* newSlab(struct FixedAllocator* fixedAllocator);
 
 static inline void* slabAlloc(Slab* slab) {
     return (slab->size < BIG_OBJECT_SIZE ? smallSlabAlloc(slab) : bigSlabAlloc(slab));

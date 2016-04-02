@@ -39,7 +39,7 @@ void* buddyAlloc(uint8_t order) {
     }
 
     node->isFree = 0;
-    return (void*) ((uint64_t) (node->begin) * (1 << node->order) * PAGE_SIZE);
+    return (void*) ((uint64_t) (node->begin) * PAGE_SIZE);
 }
 
 void printOrders() {

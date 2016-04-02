@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include "fixed_alloc.h"
 
 extern FixedAllocator forAllocators;
@@ -16,19 +17,26 @@ int initFixedAllocator() {
 }
 
 void* fixedAllocate(FixedAllocator* fixedAllocator) {
-    Slab* slab = (fixedAllocator->partly ? fixedAllocator->partly : fixedAllocator->full);
-    if (slab == NULL) {
-        fixedAllocator->partly = newSlab(fixedAllocator->size, fixedAllocator->align);
-        return fixedAllocate(fixedAllocator);
-    } else {
-        void* ptr = slabAlloc(slab);
-        if (isSlabEmpty(slab)) {
-            moveSlabToEmpty(fixedAllocator, slab);
-        } else if (isSlabPartly(slab)) {
-            moveSlabToPartly(fixedAllocator, slab);
+    Slab* slab;
+
+    while (true) {
+        slab = (fixedAllocator->partly ? fixedAllocator->partly : fixedAllocator->full);
+
+        if (slab == NULL) {
+            fixedAllocator->partly = slab = newSlab(fixedAllocator);
+            break;
+        } else {
+            if (isSlabEmpty(slab)) {
+                moveSlabToEmpty(fixedAllocator, slab);
+                continue;
+            } else if (isSlabPartly(slab)) {
+                moveSlabToPartly(fixedAllocator, slab);
+            }
+            break;
         }
-        return ptr;
     }
+
+    return slabAlloc(slab);
 }
 
 FixedAllocator* newFixedAllocator(uint16_t size, uint16_t align) {
@@ -43,40 +51,47 @@ void fixedFree(void* ptr) {
     Slab* slab = getSlabByPtr(ptr);
     slabFree(ptr);
     if (isSlabFull(slab)) {
-        if (slab->prev) {
-            slab->prev->next = slab->next;
-        }
-        if (slab->next) {
-            slab->next->prev = slab->prev;
-        }
+        changeHeadIfNeed(slab->fixedAllocator, slab);
+        cutSlab(slab);
         deleteSlab(slab);
     }
 }
 
 void moveSlabToEmpty(FixedAllocator* fixedAllocator, Slab* slab) {
-    if (slab->prev) {
-        slab->prev->next = slab->next;
-    }
-    if (slab->next) {
-        slab->next->prev = slab->prev;
-    }
-    slab->prev = NULL;
+    changeHeadIfNeed(fixedAllocator, slab);
+    cutSlab(slab);
     slab->next = fixedAllocator->empty;
     fixedAllocator->empty = slab;
 }
 
 void moveSlabToPartly(FixedAllocator* fixedAllocator, Slab* slab) {
-    if (slab->prev) {
-        slab->prev->next = slab->next;
-    }
-    if (slab->next) {
-        slab->next->prev = slab->prev;
-    }
-    slab->prev = NULL;
+    changeHeadIfNeed(fixedAllocator, slab);
+    cutSlab(slab);
     slab->next = fixedAllocator->partly;
     fixedAllocator->partly = slab;
 }
 
 void deleteFixedAllocator(FixedAllocator* fixedAllocator) {
     fixedFree(fixedAllocator);
+}
+
+void cutSlab(Slab* slab) {
+    if (slab->prev) {
+        slab->prev->next = slab->next;
+    }
+    if (slab->next) {
+        slab->next->prev = slab->prev;
+    }
+    slab->prev = slab->next = NULL;
+}
+
+void changeHeadIfNeed(FixedAllocator *fixedAllocator, Slab *slab) {
+    Slab* next = slab->next;
+    if (slab == fixedAllocator->empty) {
+        fixedAllocator->empty = next;
+    } else if (slab == fixedAllocator->partly) {
+        fixedAllocator->partly = next;
+    } else if (slab == fixedAllocator->full) {
+        fixedAllocator->full = next;
+    }
 }

@@ -82,11 +82,13 @@ void test() {
 
     printf("fixed allocator test (small object)\n");
 
-    FixedAllocator* fixedAllocator = newFixedAllocator(20, 4);
+    FixedAllocator* fixedAllocator = newFixedAllocator(40, 4);
 
-    ptr = fixedAllocate(fixedAllocator);
-    *ptr = 1;
-    fixedFree(ptr);
+    for (int i = 0; i < 1000; ++i) {
+        ptr = fixedAllocate(fixedAllocator);
+        *ptr = 1;
+        // fixedFree(ptr);
+    }
 
     deleteFixedAllocator(fixedAllocator);
 
