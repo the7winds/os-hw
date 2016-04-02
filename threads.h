@@ -30,8 +30,6 @@ uint16_t createThread(void (*functionPtr)(void*), void* args);
 
 void initThreadStack(Thread* thread, void* func, void* args);
 
-void stopThread(Thread* thread);
-
 void joinThread(uint16_t id);
 
 void killThreadById(uint16_t id);

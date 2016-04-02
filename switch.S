@@ -24,15 +24,6 @@ switch_threads:
 
 .global caller
 
-s1:
-.asciz "st 1\n";
-s2:
-.asciz "st 2\n";
-s3:
-.asciz "st 3\n";
-s4:
-.asciz "st 4\n";
-
 caller:
     sti
     call sendEOI
