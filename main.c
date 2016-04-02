@@ -55,7 +55,7 @@ void main(void)
                 printMMAP();
                 if (initFixedAllocator() == 0) {
                     printf("fixed allocator inited!\n");
-                    test();
+                    // test();
                 } else {
                     printf("can't init fixed allocator\n");
                 }
