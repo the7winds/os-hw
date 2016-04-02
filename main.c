@@ -88,11 +88,11 @@ void startMultithreading() {
 
     printf("\nBEGIN TEST:\n");
 
-    printf("\ntest 2 new threads\n");
-    simpleNThreadTest(4, 10000);
+    printf("\ntest 20 new threads\n");
+    simpleNThreadTest(20, 10000);
 
     printf("\nlock test\n");
-    // lockTest(4, 10000);
+    lockTest(4, 10000);
 
     printf("kill by id test\n\n");
     killByIdTest();
