@@ -25,6 +25,7 @@ pic_handler_start:
     movq $format, %rdi
     movq $33, %rsi
     call printf
+    call changeCurrentThread
     call sendEOI
 
     // restore registers
