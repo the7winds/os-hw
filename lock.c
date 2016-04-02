@@ -1,13 +1,15 @@
 #include "lock.h"
 #include "threads.h"
+#include "utils.h"
 
 void lock(Lock* lock) {
     __asm__ volatile("cli");
     barrier;
-    while (lock) {
-        extern uint16_t TIME_COUNTER;
+    while (*lock) {
+        printf("spins\n");
+        // extern uint16_t TIME_COUNTER;
         barrier;
-        TIME_COUNTER = 100;
+        // TIME_COUNTER = 100;
         __asm__ volatile("sti");
         __asm__ volatile("int $32");
         __asm__ volatile("cli");
@@ -21,7 +23,7 @@ void lock(Lock* lock) {
 void unlock(Lock* lock) {
     __asm__ volatile("cli");
     barrier;
-    *lock = true;
+    *lock = false;
     barrier;
     __asm__ volatile("sti");
 }

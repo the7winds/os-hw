@@ -2,13 +2,14 @@
 #include "mem_info.h"
 #include "buddy_alloc.h"
 #include "boot_alloc.h"
-#include "memory.h"
+#include "lock.h"
 
 static PageDscrptr** orders;    // lists
 
 static uint32_t pagesAmount;
 PageDscrptr* pages;             // all pages
 
+static Lock buddyLock = false;
 
 void* buddyAlloc(uint8_t order) {
     if (orders[order]) {
@@ -39,6 +40,7 @@ void* buddyAlloc(uint8_t order) {
     }
 
     node->isFree = 0;
+
     return (void*) ((uint64_t) (node->begin) * PAGE_SIZE);
 }
 
@@ -72,7 +74,7 @@ PageDscrptr* mergeNodes(PageDscrptr* node) {
 
 
 void buddyFree(void* ptr, uint8_t order) {
-    uint64_t ptrInt = (uint64_t) ptr; 
+    uint64_t ptrInt = (uint64_t) ptr;
     PageDscrptr* node = pages + (ptrInt / PAGE_SIZE);
     node->isFree = 1;
 
@@ -146,4 +148,19 @@ void coverBlock(uint64_t begin, uint64_t end, uint32_t blockIdx) {
 
 int isLess(uint64_t idx, uint64_t order, uint64_t end) {
     return ((idx + (1 << order)) * PAGE_SIZE <= end);
+}
+
+
+void* buddyVAlloc(uint8_t order) {
+    lock(&buddyLock);
+    void* ptr = (void*) VA((uint64_t) buddyAlloc(order));
+    unlock(&buddyLock);
+    return ptr;
+}
+
+
+void buddyVFree(void* ptr, uint8_t order) {
+    lock(&buddyLock);
+    buddyFree((void*)PA((uint64_t) ptr), order);
+    unlock(&buddyLock);
 }
