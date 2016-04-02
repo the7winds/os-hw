@@ -7,6 +7,10 @@ typedef volatile bool Lock;
 
 #define barrier __asm__ volatile("" : : : "memory");
 
+void atomicBegin();
+
+void atomicEnd();
+
 void lock(Lock* lock);
 
 void unlock(Lock* lock);
