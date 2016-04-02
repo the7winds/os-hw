@@ -14,10 +14,12 @@
 #include "buddy_alloc.h"
 #include "fixed_alloc.h"
 #include "paging.h"
+#include "threadsTest.h"
+#include "threads.h"
 
 struct idt_dscrpt idt[IDT_SIZE];
 
-void test();
+void startMultithreading();
 
 void main(void)
 {
@@ -55,7 +57,7 @@ void main(void)
                 printMMAP();
                 if (initFixedAllocator() == 0) {
                     printf("fixed allocator inited!\n");
-                    // test();
+                    startMultithreading();
                 } else {
                     printf("can't init fixed allocator\n");
                 }
@@ -71,6 +73,31 @@ void main(void)
     printf("----END----\n");
     
     while (1);
+}
+
+void startMultithreading() {
+    printf("----------- START MULTITHREADING TEST ------------\n");
+
+    printf("init multithreading... ");
+    initMultithreading();
+    printf("OK\n");
+
+    printf("init init scheduler... ");
+    initThreadScheduler();
+    printf("OK\n");
+
+    printf("\nBEGIN TEST:\n");
+
+    printf("\ntest 2 new threads\n");
+    simpleNThreadTest(4, 10000);
+
+    printf("\nlock test\n");
+    // lockTest(4, 10000);
+
+    printf("kill by id test\n\n");
+    killByIdTest();
+
+    printf("----------- END MULTITHREADING TEST ------------\n");
 }
 
 /* void test() {

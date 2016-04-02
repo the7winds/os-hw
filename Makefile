@@ -6,11 +6,11 @@ CFLAGS := -g -m64 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -ffreestanding \
 	-Wframe-larger-than=4096 -Wstack-usage=4096 -Wno-unknown-warning-option
 LFLAGS := -nostdlib -z max-page-size=0x1000
 
-ASM := picHandler.S bootstrap.S videomem.S
+ASM := switch.S picHandler.S bootstrap.S videomem.S
 AOBJ:= $(ASM:.S=.o)
 ADEP:= $(ASM:.S=.d)
 
-SRC := lock.c paging.c fixed_alloc.c slab_alloc.c buddy_alloc.c boot_alloc.c mem_info.c utils.c PIC.c main.c
+SRC := threadsTest.c threads.c lock.c paging.c fixed_alloc.c slab_alloc.c buddy_alloc.c boot_alloc.c mem_info.c utils.c PIC.c main.c
 OBJ := $(AOBJ) $(SRC:.c=.o)
 DEP := $(ADEP) $(SRC:.c=.d)
 
