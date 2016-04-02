@@ -39,11 +39,11 @@ void main(void)
     idt[0x20].seg_selector = KERNEL_CODE;
     idt[0x20].reserved = 0x0;
 
-    // set up interrups flag
+    // set up interrupts flag
     // __asm__ volatile("sti");
 
     if (initMMAPInfo() == 0) {
-        printf("intited initMMAPInfo\n");
+        printf("inited initMMAPInfo\n");
         printMMAP();
         if (reserveKernelMemory() == 0) {
             printf("kernel memory is reserved\n");
@@ -73,7 +73,7 @@ void main(void)
     while (1);
 }
 
-void test() {
+/* void test() {
     printf("buddy allocator test\n");
 
     char* ptr = buddyVAlloc(1);
@@ -101,4 +101,4 @@ void test() {
     fixedFree(ptr);
 
     deleteFixedAllocator(fixedAllocator);
-}
+}*/

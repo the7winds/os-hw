@@ -95,21 +95,21 @@ int initBuddyAllocator() {
     printf("Max phys addr: 0x%llx\n", MAX_PHYS_ADDR); 
     printf("Page size: 0x%llx\n", PAGE_SIZE);
     printf("Amount of pages: 0x%llx\n", pagesAmount);
-    printf("Memory for pages dscrptrs: 0x%llx\n", pagesAmount * sizeof(PageDscrptr));
+    printf("Memory for pages descriptors: 0x%llx\n", pagesAmount * sizeof(PageDscrptr));
 
     pages = (PageDscrptr*) boot_alloc(pagesAmount * sizeof(PageDscrptr));
     if (pages == NULL) {
         return 1;
     }
 
-    printf("resered memory for pages dscrptrs\n");
+    printf("reserved memory for pages descriptors\n");
 
     orders = (PageDscrptr**) boot_alloc(MAX_ORDER * sizeof(PageDscrptr*));
     if (orders == NULL) {
         return 2;
     }
 
-    printf("resered memory for lists\n");
+    printf("reserved memory for lists\n");
 
     printf("initing lists...\n");
 
