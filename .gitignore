@@ -4,3 +4,4 @@ kernel
 *.txt
 .idea
 log
+run.sh
