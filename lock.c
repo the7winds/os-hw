@@ -6,8 +6,8 @@ static uint64_t RFLAGS;
 
 void atomicBegin() {
     __asm__ volatile("pushfq\n\t"
-            "popq %0\n\t"
-            "cli" : "=a"(RFLAGS));
+            "cli\n\t"
+            "popq %0" : "=a"(RFLAGS));
     barrier;
 }
 
@@ -20,7 +20,8 @@ void atomicEnd() {
 void lock(Lock* lock) {
     atomicBegin();
     while (*lock) {
-        // extern uint16_t TIME_COUNTER;
+        extern uint16_t TIME_COUNTER;
+        TIME_COUNTER = 100;
         atomicEnd();
         __asm__ volatile("int $32");
         atomicBegin();

@@ -17,6 +17,7 @@ static uint16_t freeIdFirst;
 // id ----> thread
 static Thread** threadMap;
 
+static Thread* deadThreads;
 
 uint16_t allocId() {
     atomicBegin();
@@ -50,8 +51,10 @@ void initMultithreading() {
     MAIN_THREAD = (Thread*) fixedAllocate(THREAD_ALLOCATOR);
     MAIN_THREAD->id = allocId();
     MAIN_THREAD->isDead = false;
-    __asm__ volatile("movq %%rbp, %0" : "=r"(MAIN_THREAD->stackBase));
-
+    MAIN_THREAD->joined = false;
+    MAIN_THREAD->next = NULL;
+    MAIN_THREAD->stackPtr = NULL;
+    MAIN_THREAD->stackMem = NULL;
 
     threadMap[0] = MAIN_THREAD;
 }
@@ -60,46 +63,42 @@ void initMultithreading() {
 uint16_t createThread(void (*functionPtr)(void*), void* args) {
     Thread* newThread = fixedAllocate(THREAD_ALLOCATOR);
 
-    newThread->id = allocId();
+    uint16_t id = allocId();
+    newThread->id = id;
     newThread->isDead = false;
+    newThread->joined = false;
     newThread->stackMem = buddyVAlloc(STACK_SIZE_ORDER);
-    newThread->stackBase = (void*) ((uint64_t) newThread->stackMem + (1 << STACK_SIZE_ORDER) * PAGE_SIZE);
-    threadMap[newThread->id] = newThread;
+    newThread->next = NULL;
+    threadMap[id] = newThread;
 
-    initThreadStack(newThread, (void*) ((uint64_t) functionPtr), args);
-
+    initThreadStack(newThread, (uint64_t) functionPtr, args);
     addThreadToTaskQueue(newThread);
 
-    return newThread->id;
+    return id;
 }
 
 
-void initThreadStack(Thread* thread, void* func, void* args) {
-    void* info = thread->stackPtr = (void*) ((uint64_t) thread->stackBase - 9 * sizeof(uint64_t));
+void initThreadStack(Thread* thread, uint64_t func, void* args) {
+    thread->stackPtr = (void*) ((uint64_t) thread->stackMem + (1 << STACK_SIZE_ORDER) * PAGE_SIZE - 10 * sizeof(uint64_t));
+    void* data = thread->stackPtr;
 
     extern void* caller;
 
-    ((void**) info)[8] = func;                 // store func address
-    ((void**) info)[7] = args;                 // store func's args
-    ((void**) info)[6] = &caller;
-    ((void**) info)[5] = thread->stackBase;    // rbp
-    ((uint64_t*) info)[4] = 0;                 // rbx
-    ((uint64_t*) info)[3] = 0;                 // r12
-    ((uint64_t*) info)[2] = 0;                 // r13
-    ((uint64_t*) info)[1] = 0;                 // r14
-    ((uint64_t*) info)[0] = 0;                 // r15
-
-    if (thread->id == 5) {
-        printf("THREAD %d\n", thread->id);
-        printf("caller %llx", ((void**) info)[6]);
-        printf("base %llx", ((void**) info)[5]);
-        printf("stack %llx", thread->stackPtr);
-    }
+    ((uint64_t*) data)[8] = func;    // store func address
+    ((void**) data)[7] = args;       // store func's args
+    ((void**) data)[6] = &caller;
+    ((void**) data)[5] = 0;          // rbp
+    ((uint64_t*) data)[4] = 0;       // rbx
+    ((uint64_t*) data)[3] = 0;       // r12
+    ((uint64_t*) data)[2] = 0;       // r13
+    ((uint64_t*) data)[1] = 0;       // r14
+    ((uint64_t*) data)[0] = 0;       // r15
 }
 
 
 void freeThreadResources(Thread* thread) {
     printf("thread's #%d resources are released\n", thread->id);
+    threadMap[thread->id] = NULL;
     freeId(thread->id);
     buddyVFree(thread->stackMem, STACK_SIZE_ORDER);
     fixedFree(thread);
@@ -107,9 +106,18 @@ void freeThreadResources(Thread* thread) {
 
 
 void joinThread(uint16_t id) {
+    atomicBegin();
     Thread* thread = threadMap[id];
-    while (!thread->isDead);
-    freeThreadResources(thread);
+    bool catched = false;
+    if (thread && !thread->joined) {
+        thread->joined = true;
+        catched = true;
+    }
+    atomicEnd();
+    if (catched) {
+        while (!thread->isDead);
+        freeThreadResources(thread);
+    }
 }
 
 // ---- scheduler -----
@@ -122,22 +130,22 @@ Thread* threadsQueueLast;
 uint8_t TIME_COUNTER;
 
 void initThreadScheduler() {
-    threadsQueueFirst = threadsQueueLast = MAIN_THREAD;
-    threadsQueueFirst->next = threadsQueueLast;
+    threadsQueueFirst = MAIN_THREAD;
+    threadsQueueFirst->next = threadsQueueLast = createCleaner();
 
     // enables interrupts, so from there the scheduler starts his work
     __asm__ volatile("sti");
+
+    printf("\ncleaner started in thread #%d\n");
 }
 
 
 void printAliveThreads() {
     atomicBegin();
 
-    Thread* t = threadsQueueFirst;
-    do {
+    for (Thread* t = threadsQueueFirst; t; t = t->next) {
         printf("%d -> ", t->id);
-        t = t->next;
-    } while (t != threadsQueueLast -> next);
+    }
     printf("NULL\n");
 
     atomicEnd();
@@ -148,6 +156,7 @@ void addThreadToTaskQueue(Thread* thread) {
     atomicBegin();
     threadsQueueLast->next = thread;
     threadsQueueLast = thread;
+    thread->next = NULL;
     atomicEnd();
 }
 
@@ -159,14 +168,21 @@ void changeCurrentThread() {
 
         Thread* oldCurrent = threadsQueueFirst;
 
-        if (!threadsQueueFirst->isDead) {
-            threadsQueueLast->next = threadsQueueFirst;
-            threadsQueueLast = threadsQueueFirst;
-        }
+        printAliveThreads();
 
-        do {
-            threadsQueueFirst = threadsQueueFirst->next;
-        } while(threadsQueueFirst->isDead);
+        if (!oldCurrent->isDead) {
+            threadsQueueFirst = oldCurrent->next;
+            oldCurrent->next = NULL;
+            threadsQueueLast->next = oldCurrent;
+            threadsQueueLast = oldCurrent;
+        } else {
+            while (threadsQueueFirst->isDead) {
+                Thread *thread = threadsQueueFirst;
+                threadsQueueFirst = thread->next;
+                thread->next = deadThreads;
+                deadThreads = thread;
+            }
+        }
 
         printAliveThreads();
 
@@ -198,4 +214,32 @@ uint16_t getCurrentId() {
     uint16_t id = threadsQueueFirst->id;
     atomicEnd();
     return id;
+}
+
+Thread* createCleaner() {
+    Thread* thread = fixedAllocate(THREAD_ALLOCATOR);
+    thread->id = allocId();
+    thread->stackMem = buddyVAlloc(STACK_SIZE_ORDER);
+    thread->isDead = false;
+    thread->joined = false;
+    thread->next = NULL;
+    initThreadStack(thread, (uint64_t) cleaner, NULL);
+
+    return thread;
+}
+
+void cleaner(void* ignored) {
+    while (ignored == NULL) {  // else I have unused variable
+        atomicBegin();
+        Thread* thread = deadThreads;
+        deadThreads = (thread ? thread->next : NULL);
+        atomicEnd();
+
+        if (thread) {
+            joinThread(thread->id);
+        } else {
+            TIME_COUNTER = 100;
+            __asm__ volatile ("int $32");
+        }
+    }
 }
