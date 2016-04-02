@@ -17,6 +17,7 @@ int initFixedAllocator() {
 }
 
 void* fixedAllocate(FixedAllocator* fixedAllocator) {
+    lock(&fixedAllocator->lock);
     Slab* slab;
 
     while (true) {
@@ -35,6 +36,7 @@ void* fixedAllocate(FixedAllocator* fixedAllocator) {
             break;
         }
     }
+    unlock(&fixedAllocator->lock);
 
     return slabAlloc(slab);
 }
@@ -43,18 +45,22 @@ FixedAllocator* newFixedAllocator(uint16_t size, uint16_t align) {
     FixedAllocator* fixedAllocator = (FixedAllocator*) fixedAllocate(&forAllocators);
     fixedAllocator->size = size;
     fixedAllocator->align = align;
+    fixedAllocator->lock = false;
     fixedAllocator->empty = fixedAllocator->partly = fixedAllocator->full = NULL;
     return fixedAllocator;
 }
 
 void fixedFree(void* ptr) {
     Slab* slab = getSlabByPtr(ptr);
+    FixedAllocator* fixedAllocator = slab->fixedAllocator;
+    lock(&fixedAllocator->lock);
     slabFree(ptr);
     if (isSlabFull(slab)) {
         changeHeadIfNeed(slab->fixedAllocator, slab);
         cutSlab(slab);
         deleteSlab(slab);
     }
+    unlock(&fixedAllocator->lock);
 }
 
 void moveSlabToEmpty(FixedAllocator* fixedAllocator, Slab* slab) {

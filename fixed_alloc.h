@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "memory.h"
 #include "slab_alloc.h"
+#include "lock.h"
 
 struct FixedAllocator {
     uint16_t size;
@@ -12,6 +13,7 @@ struct FixedAllocator {
     Slab* empty;
     Slab* partly;
     Slab* full;
+    Lock lock;
 };
 
 typedef struct FixedAllocator FixedAllocator;
