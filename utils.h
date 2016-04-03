@@ -6,6 +6,10 @@
 
 typedef int size_t;
 
+void putc(char c);
+
+void puts(char* str);
+
 int printf(char* format, ...);
 
 int vprintf(char *format, va_list arg);
@@ -26,7 +30,7 @@ int printUnsignedNum(void* arg, size_t argSize, int base, void (*printer)(char c
 
 int printfHelper(char *format, va_list args, void (*printer)(char c, void* wrapper), void* wrapper);
 
-void UARTprinter(char c, void* wrapper);
+void printer(char c, void* wrapper);
 
 void bufferPrinter(char c, void* wrapper);
 

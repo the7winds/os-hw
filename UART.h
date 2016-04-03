@@ -2,16 +2,13 @@
 #define __UART_H__
 
 #include "ioport.h"
+#include "utils.h"
 
 #define UARTbegin    0x3f8
 #define UARTDataR    UARTbegin + 0
 #define UARTIntrEnR  UARTbegin + 1
 #define UARTLnCntrlR UARTbegin + 3
 #define UARTLnStsR   UARTbegin + 5      	// if 5th bit is 1 then we can write next data else wait
-
-void UARTputchar(char);
-
-void UARTputstr(char*);
 
 static inline void initUART()
 {
@@ -25,7 +22,7 @@ static inline void initUART()
     out8(UARTIntrEnR, 0);                   // don't gen interruptions
 
     // test output
-    UARTputstr("UART test\n");
+    puts("UART test\n");
 }
 
 #endif /* __UART_H__ */
