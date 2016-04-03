@@ -30,6 +30,9 @@
 
 **функция/структура** | **описание**
 ---|---
+`Thread* createCleaner()` | инициализирует поток, который будет удалять dead-потоки
+`void cleaner(void* ignored)` | функция, которую исполняет поток cleaner
+`void printAliveThreads()` | отладочная функция, которая выводит список потоков в очериди исполнения
 `void initThreadScheduler()` | инициализирует планировщик (создаёт очередь, включает прерывания)
 `void addThreadToTaskQueue(Thread* thread)` | добавляет поток в очередь
 `void changeCurrentThread()` | переключает на следующий в очереди поток
