@@ -17,8 +17,11 @@ void simpleNThreadTest(int n, int delay) {
 void delayedPrintIdTask(void* arg) {
     int delay = *((int*) arg);
     for (int i = 0; i < delay; ++i) {
-        printf("thread #%u\n", getCurrentId());
+        if (i % 1000 == 0) {
+            printf("thread #%u\n", getCurrentId());
+        }
     }
+    printf("finished\n");
 }
 
 static int lockTestS = 0;
@@ -46,7 +49,9 @@ void nIncTask(void* arg) {
     int n = *((int*) arg);
     printf("#%d 1\n", getCurrentId());
     for (int i = 0; i < n; ++i) {
-        printf("#%d %d\n", getCurrentId(), i);
+        if (i % 1000 == 0) {
+            printf("#%d %d\n", getCurrentId(), i);
+        }
         lock(&testLock);
         int t = lockTestS;
         for (int j = 0; j < 1000; ++j);
@@ -65,9 +70,11 @@ void killByIdTest() {
 
     uint16_t id = createThread(killedTask, &killedArg);
     for (long long i = 0; i < 100000; ++i) {
-        printf("thread #%d\n", getCurrentId());
+        if (i % 1000 == 0) {
+            printf("thread #%d\n", getCurrentId());
+        }
     }
-
+    printf("KILL thread #%d\n", id);
     killThreadById(id);
     joinThread(id);
     printf("done %d tiks from %d\n", killedArg.ticks, killedArg.delay);
