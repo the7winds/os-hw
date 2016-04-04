@@ -17,6 +17,7 @@ struct Thread {
     uint16_t id;        // thread_id
     bool isDead;        // flag is thread dead
     Thread* next;       // to put this to lists
+    Thread* prev;
     bool joined;
 };
 
@@ -53,5 +54,9 @@ Thread* createCleaner();
 void cleaner(void* ignored);
 
 void printAliveThreads();
+
+void cut(Thread* thread);
+
+void removeFromDead(Thread* thread);
 
 #endif /* __THREADS_H__ */

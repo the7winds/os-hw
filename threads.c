@@ -74,10 +74,13 @@ uint16_t createThread(void (*functionPtr)(void*), void* args) {
     newThread->joined = false;
     newThread->stackMem = buddyVAlloc(STACK_SIZE_ORDER);
     newThread->next = NULL;
+    newThread->prev = NULL;
     threadMap[id] = newThread;
 
     initThreadStack(newThread, (uint64_t) functionPtr, args);
     addThreadToTaskQueue(newThread);
+
+    printf("create thread #%d\n", newThread->id);
 
     return id;
 }
@@ -104,6 +107,7 @@ void initThreadStack(Thread* thread, uint64_t func, void* args) {
 void freeThreadResources(Thread* thread) {
     printf("thread's #%d resources are released\n", thread->id);
     threadMap[thread->id] = NULL;
+    removeFromDead(thread);
     freeId(thread->id);
     buddyVFree(thread->stackMem, STACK_SIZE_ORDER);
     fixedFree(thread);
@@ -112,6 +116,8 @@ void freeThreadResources(Thread* thread) {
 
 void joinThread(uint16_t id) {
     uint64_t RFLAGS = atomicBegin();
+
+    printf("joins thread #%d\n", id);
 
     Thread* thread = threadMap[id];
     bool catched = false;
@@ -123,6 +129,7 @@ void joinThread(uint16_t id) {
     atomicEnd(RFLAGS);
 
     if (catched) {
+        threadMap[id] = NULL;
         while (!thread->isDead);
         freeThreadResources(thread);
     }
@@ -160,6 +167,18 @@ void printAliveThreads() {
 }
 
 
+void printDeadThreads() {
+    uint64_t RFLAGS = atomicBegin();
+
+    for (Thread* t = deadThreads; t; t = t->next) {
+        printf("%d -> ", t->id);
+    }
+    printf("NULL\n");
+
+    atomicEnd(RFLAGS);
+}
+
+
 void addThreadToTaskQueue(Thread* thread) {
     uint64_t RFLAGS = atomicBegin();
 
@@ -179,6 +198,7 @@ void changeCurrentThread() {
         Thread* oldCurrent = threadsQueueFirst;
 
         printAliveThreads();
+        printDeadThreads();
 
         if (!oldCurrent->isDead) {
             threadsQueueFirst = oldCurrent->next;
@@ -189,12 +209,16 @@ void changeCurrentThread() {
             while (threadsQueueFirst->isDead) {
                 Thread *thread = threadsQueueFirst;
                 threadsQueueFirst = thread->next;
+                if (deadThreads) {
+                    deadThreads->prev = thread;
+                }
                 thread->next = deadThreads;
                 deadThreads = thread;
             }
         }
 
         printAliveThreads();
+        printDeadThreads();
 
         if (oldCurrent != threadsQueueFirst) {
             printf("switch: thread #%d (stored at %llx) --> thread #%d (stored at %llx)\n", oldCurrent->id, oldCurrent, threadsQueueFirst->id, threadsQueueFirst);
@@ -262,5 +286,21 @@ void cleaner(void* ignored) {
             TIME_COUNTER = 100;
             __asm__ volatile ("int $32");
         }
+    }
+}
+
+void cut(Thread* thread) {
+    if (thread->next) {
+        thread->next->prev = thread->prev;
+    }
+    if (thread->prev) {
+        thread->prev->next = thread->next;
+    }
+}
+
+void removeFromDead(Thread* thread) {
+    cut(thread);
+    if (deadThreads == thread) {
+        deadThreads = thread->next;
     }
 }
