@@ -36,9 +36,11 @@ void* fixedAllocate(FixedAllocator* fixedAllocator) {
             break;
         }
     }
+    
+    void* ptr = slabAlloc(slab);
     unlock(&fixedAllocator->lock);
-
-    return slabAlloc(slab);
+    
+    return ptr;
 }
 
 FixedAllocator* newFixedAllocator(uint16_t size, uint16_t align) {

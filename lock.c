@@ -2,38 +2,40 @@
 #include "threads.h"
 #include "utils.h"
 
-static uint64_t RFLAGS;
-
-void atomicBegin() {
+uint64_t atomicBegin() {
+    uint64_t RFLAGS;
     __asm__ volatile("pushfq\n\t"
             "cli\n\t"
             "popq %0" : "=a"(RFLAGS));
     barrier;
+    return RFLAGS;
 }
 
-void atomicEnd() {
+void atomicEnd(uint64_t RFLAGS) {
     barrier;
     __asm__ volatile("pushq %0\n\t"
             "popfq" : : "a"(RFLAGS));
 }
 
 void lock(Lock* lock) {
-    atomicBegin();
+    uint64_t RFLAGS = atomicBegin();
+
     while (*lock) {
         extern uint16_t TIME_COUNTER;
         TIME_COUNTER = 100;
-        atomicEnd();
+        atomicEnd(RFLAGS);
         __asm__ volatile("int $32");
-        atomicBegin();
+        RFLAGS = atomicBegin();
     }
     *lock = true;
-    atomicEnd();
+    
+    atomicEnd(RFLAGS);
 }
 
 void unlock(Lock* lock) {
-    __asm__ volatile("cli");
-    barrier;
+    uint64_t RFLAGS = atomicBegin();
+    
     *lock = false;
-    barrier;
-    __asm__ volatile("sti");
+    
+    atomicEnd(RFLAGS);
 }

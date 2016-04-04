@@ -7,7 +7,7 @@
 // ----- common thread part --------
 
 #define MAX_THREAD_ID 65535	// (1 << 16) - 1
-#define STACK_SIZE_ORDER 10
+#define STACK_SIZE_ORDER 0
 
 typedef struct Thread Thread;
 

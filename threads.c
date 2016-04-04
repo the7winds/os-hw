@@ -20,17 +20,22 @@ static Thread** threadMap;
 static Thread* deadThreads;
 
 uint16_t allocId() {
-    atomicBegin();
+    uint64_t RFLAGS = atomicBegin();
+
     uint16_t id = freeIdList[freeIdFirst++];
-    atomicEnd();
+
+    atomicEnd(RFLAGS);
+
     return id;
 }
 
 
 void freeId(uint16_t id) {
-    atomicBegin();
+    uint64_t RFLAGS = atomicBegin();
+
     freeIdList[--freeIdFirst] = id;
-    atomicEnd();
+
+    atomicEnd(RFLAGS);
 }
 
 
@@ -106,14 +111,17 @@ void freeThreadResources(Thread* thread) {
 
 
 void joinThread(uint16_t id) {
-    atomicBegin();
+    uint64_t RFLAGS = atomicBegin();
+
     Thread* thread = threadMap[id];
     bool catched = false;
     if (thread && !thread->joined) {
         thread->joined = true;
         catched = true;
     }
-    atomicEnd();
+
+    atomicEnd(RFLAGS);
+
     if (catched) {
         while (!thread->isDead);
         freeThreadResources(thread);
@@ -141,23 +149,25 @@ void initThreadScheduler() {
 
 
 void printAliveThreads() {
-    atomicBegin();
+    uint64_t RFLAGS = atomicBegin();
 
     for (Thread* t = threadsQueueFirst; t; t = t->next) {
         printf("%d -> ", t->id);
     }
     printf("NULL\n");
 
-    atomicEnd();
+    atomicEnd(RFLAGS);
 }
 
 
 void addThreadToTaskQueue(Thread* thread) {
-    atomicBegin();
+    uint64_t RFLAGS = atomicBegin();
+
     threadsQueueLast->next = thread;
     threadsQueueLast = thread;
     thread->next = NULL;
-    atomicEnd();
+
+    atomicEnd(RFLAGS);
 }
 
 
@@ -194,25 +204,34 @@ void changeCurrentThread() {
 }
 
 void killThread() {
-    atomicBegin();
+    uint64_t RFLAGS = atomicBegin();
+
     threadsQueueFirst->isDead = true;
     TIME_COUNTER = 100;     // guarantees that will be handled
-    atomicEnd();
+
+    atomicEnd(RFLAGS);
+
     __asm__ volatile("int $32");
 }
 
 void killThreadById(uint16_t id) {
-    atomicBegin();
+    uint64_t RFLAGS = atomicBegin();
+
     threadMap[id]->isDead = true;
     TIME_COUNTER = 100;     // guarantees that will be handled
-    atomicEnd();
+
+    atomicEnd(RFLAGS);
+
     __asm__ volatile("int $32");
 }
 
 uint16_t getCurrentId() {
-    atomicBegin();
+    uint64_t RFLAGS = atomicBegin();
+
     uint16_t id = threadsQueueFirst->id;
-    atomicEnd();
+
+    atomicEnd(RFLAGS);
+
     return id;
 }
 
@@ -230,10 +249,12 @@ Thread* createCleaner() {
 
 void cleaner(void* ignored) {
     while (ignored == NULL) {  // else I have unused variable
-        atomicBegin();
+        uint64_t RFLAGS = atomicBegin();
+
         Thread* thread = deadThreads;
         deadThreads = (thread ? thread->next : NULL);
-        atomicEnd();
+
+        atomicEnd(RFLAGS);
 
         if (thread) {
             joinThread(thread->id);
