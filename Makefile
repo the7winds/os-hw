@@ -10,7 +10,7 @@ ASM := switch.S picHandler.S bootstrap.S videomem.S
 AOBJ:= $(ASM:.S=.o)
 ADEP:= $(ASM:.S=.d)
 
-SRC := threadsTest.c threads.c lock.c paging.c fixed_alloc.c slab_alloc.c buddy_alloc.c boot_alloc.c mem_info.c utils.c PIC.c main.c
+SRC := fsTest.c initramfs.c fs.c threads.c lock.c paging.c fixed_alloc.c slab_alloc.c buddy_alloc.c boot_alloc.c mem_info.c utils.c PIC.c main.c
 OBJ := $(AOBJ) $(SRC:.c=.o)
 DEP := $(ADEP) $(SRC:.c=.d)
 

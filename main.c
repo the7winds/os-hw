@@ -16,6 +16,9 @@
 #include "paging.h"
 #include "threadsTest.h"
 #include "threads.h"
+#include "fs.h"
+#include "fsTest.h"
+#include "initramfs.h"
 
 struct idt_dscrpt idt[IDT_SIZE];
 
@@ -50,6 +53,8 @@ void main(void)
         if (reserveKernelMemory() == 0) {
             printf("kernel memory is reserved\n");
             printMMAP();
+            initramfs();
+            printMMAP();
             if (initBuddyAllocator() == 0) {
                 printf("buddy allocator inited\n");
                 setUpPaging();
@@ -57,7 +62,12 @@ void main(void)
                 printMMAP();
                 if (initFixedAllocator() == 0) {
                     printf("fixed allocator inited!\n");
-                    startMultithreading();
+                    initFS();
+                    printTree();
+                    parseIso();
+                    printTree();
+                    fsTest();
+                    // startMultithreading();
                 } else {
                     printf("can't init fixed allocator\n");
                 }
@@ -71,10 +81,11 @@ void main(void)
         printf("can't initMMAPInfo\n");
     }
     printf("----END----\n");
-    
+
     while (1);
 }
 
+/*
 void startMultithreading() {
     printf("----------- START MULTITHREADING TEST ------------\n");
 
@@ -98,7 +109,7 @@ void startMultithreading() {
     killByIdTest();
 
     printf("----------- END MULTITHREADING TEST ------------\n");
-}
+} */
 
 /* void test() {
     printf("buddy allocator test\n");
