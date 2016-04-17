@@ -1,61 +1,54 @@
-# os-hw 03: threads
+# os-hw 04: fs
 
 
-### lock.h/lock.c
+### fs.h/fs.c
 
-**функция/структура** | **описание**
----|---
-`Lock` | собственно lock
-`void atomicBegin()` | выключает прерывания, чтобы никто не смог вытеснить нас и сохраняет в флаги
-`void atomicEnd()` | восстанавливает старые флаги
-`void lock(Lock* lock)` | берёт lock
-`void lock(Lock* lock)` | освобождает lock
-
-### threads.h/threads.c
-
-*общие функции потоков*
+пути пишутся без root'а, т.е. /test -> test
 
 **функция/структура** | **описание**
 ---|---
-`Thread` | структура для потока, содержит указатели на стек с разных концов, id, и указатель на поток, чтобы можно было построить очередь на списке
-`uint16_t allocId()` | выделяет свободный номер
-`void freeId(uint16_t id)` | освобождает, выделенный ранее номер
-`void initMultithreading()` | инициализирует начальные значения, создаёт структуру для главного потока
-`uint16_t createThread(void (*functionPtr)(void*), void* args)` | создаёт и запускает поток, возвращает id
-`void initThreadStack(Thread* thread, void* func, void* args)` | вспомогательная функция, инициализирующая стек нового потока
-`void joinThread(uint16_t id)` | дожидается выполнения потока и освобождает его ресурсы
-`void killThreadById(uint16_t id)` | снимает поток с выполнения, без освобождения ресурсов
+`FSNode` | структура, описвающая файл
+`DataNode` | структура указывающая на блок памяти файла
+`void initFS()` | заводит нужные аллокаторы, инициализирует корень
+`FSNode* find(char* pathname)` | ищет по пути файл
+`void getName(char* pathname, uint32_t begin, char* name)` | принимает путь и возвращает последнее имя (a/b/c -> c)
+`FSNode* find2(char* pathname, uint32_t end)` | ищет по пути файл
+`FSNode* open(char* pathname)` | открывает файл, если его нет, создаёт
+`int findPathEnd(char* pathname)` | ищет где заканчивается последняя дирректория, содержащая файл
+`FSNode* createFile(char* pathname)` | создаёт файл, используется внутри `open`
+`void close(FSNode* file)` | закрывает файл
+`FSNode* mkdir(char* pathname)` | создаёт директорию
+`FSNode* readDir(char* pathname)` | возвращает указатель на первого ребёнка в директории
+`void read(FSNode* file, uint64_t shift, uint8_t* buf, uint32_t count)` | читает по сдвигу
+`void write(FSNode* file, uint64_t shift, uint8_t* buf, uint32_t count)` | пишет по сдвигу, всё что после сдвига затирается
+`void printTree()` | выводит дерево файловой системы
+`void printNode(FSNode* node, uint8_t space)` | вспомогательная функция для `printTree`
+`DataNode* newDataNode()` | создаёт и инициализирует новую ноду
+`DataNode* seek(DataNode* start, uint64_t* shift)` | возвращает указатель на блок соответствующий сдвигу
 
-*функции планировщика*
+### initramfs.h / initramfs.c
+
+описаны только добавленные мной функции
 
 **функция/структура** | **описание**
 ---|---
-`Thread* createCleaner()` | инициализирует поток, который будет удалять dead-потоки
-`void cleaner(void* ignored)` | функция, которую исполняет поток cleaner
-`void printAliveThreads()` | отладочная функция, которая выводит список потоков в очериди исполнения
-`void initThreadScheduler()` | инициализирует планировщик (создаёт очередь, включает прерывания)
-`void addThreadToTaskQueue(Thread* thread)` | добавляет поток в очередь
-`void changeCurrentThread()` | переключает на следующий в очереди поток
-`void switch_threads(void **old_sp, void *new_sp)` | переключение с одного потка на другой (реализация в switch.S)
-`uint16_t getCurrentId()` | возвращает id исполняющегося потока
+`void initramfs()` | вызывает все остальные функции, инициализирует файловую систему
+`void reserveIsoMemory()` | резервирует память образа
+`void parseIso()` | парсит образ
+`void* parseRecord(char* iter)` | парсит одну запись и создаёт нужный файл
+`void* alignPtr(char* ptr)` | выравнивает указатель на границу 4 байта
+`uint32_t getMode(struct cpio_header* header)` | вычисляет режим
+`uint32_t getNameLen(struct cpio_header* header)` | вычисляет длину имени
+`uint32_t getFileSize(struct cpio_header* header)` | вычисляет размер файла
 
-### threadsTest.h/threadsTest.c
+### fsTest.h/fsTest.c
+
+запускать можно только с переданным qemu файлом testIso!
 
 **функция/структура** | **описание**
 ---|---
-`void simpleNThreadTest(int n, int delay)` | запускает n потоков, каждый delay раз выводит своё имя
-`void delayedPrintIdTask(void* arg)` | функция, исполняемая потоками из `simpleNThreadTest`
-`void lockTest(int n, int t)` | запускает n потоков, которые делают в несколько шагов +1 в общую переменную (пытаемся создать data race), каждый по t раз
-`void nIncTask(void* arg)` | функция, исполняемая потоками из `lockTest`
-`void killByIdTest()` | запускает один поток параллельно исходному, который должен выводить свой id дольше чем запустивший.   заупустивший под не дожидаясь убивает его и join'ит для освобождения ресурсов, в конце выводится сколько успел поработать убитый поток
-`KilledArg` | структура хранящая веремя работы, и сколько порботал поток на самом деле в `killByIdTest`
-`killedTask(void* arg)` | функция, исполняемая потокам из `killByIdTest`
-
-### switch.S
-**функция/структура** | **описание**
----|---
-`switch_threads` | переключает потоки
-`caller` | сюда переходит управление после переключения на только что созданный поток
-
-### picHandler.S
-здесь почти ничего не поменялось, добавился вызов переключающей функции 
+`void fsTest()` | вызывает все остальные функции тестирования
+`void readTest01()` | проверяет, что прочитало правильно слово из файла
+`void readTest02()` | проверяет, что прочитало правильно слово из файла
+`void writeTest()` | делает запись, проверяет, что потом прочитано нужное
+`void newFileTest()` | создаёт новый файл и пишет в него
