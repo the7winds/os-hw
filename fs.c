@@ -95,6 +95,7 @@ int findPathEnd(char* pathname) {
 
 
 FSNode* createFile(char* pathname) {
+    uint64_t fl = atomicBegin();
     int end = findPathEnd(pathname);
     FSNode* dir = find2(pathname, end);
 
@@ -119,7 +120,9 @@ FSNode* createFile(char* pathname) {
         file->lock = false;
 
         return file;
+        atomicEnd(fl);
     }
+    atomicEnd(fl);
     return NULL;
 }
 
@@ -131,6 +134,8 @@ void close(FSNode* file) {
 
 
 FSNode* mkdir(char* pathname) {
+    uint64_t fl = atomicBegin();
+
     uint32_t end = findPathEnd(pathname);
 
     FSNode* dir = find2(pathname, end);
@@ -154,20 +159,23 @@ FSNode* mkdir(char* pathname) {
         newDir->isOpen = false;
 
         newDir->lock = false;
-
+        atomicEnd(fl);
         return newDir;
     }
 
+    atomicEnd(fl);
     return NULL;
 }
 
 
 FSNode* readDir(char* pathname) {
+    uint64_t fl = atomicBegin();
     FSNode* dir = find(pathname);
     if (dir && dir->isDir) {
+        atomicEnd(fl);
         return dir->child;
     }
-
+    atomicEnd(fl);
     return NULL;
 }
 
